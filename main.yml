@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  author: David Stainton
+  description: Ansible Tahoe-LAFS role
+  license: license MIT
+  platforms:
+  - name: Ubuntu, Debian
+    versions:
+    - all
+  categories:
+  - networking
+  min_ansible_version: 1.2
+dependencies: []
