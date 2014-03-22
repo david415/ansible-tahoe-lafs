@@ -1,0 +1,20 @@
+---
+
+- name: create tahoe client directory
+  file: path={{ tahoe_client_dir }} state=directory
+
+- name: template tahoe.cfg
+  template: src=tahoe.cfg dest="{{ tahoe_client_config }}"
+    mode=0600
+
+- name: tahoe tac file
+  copy: src=tahoe-client.tac dest={{ tahoe_client_dir }}/tahoe-client.tac
+
+- name: check if tahoe is running
+  command: pgrep tahoe
+  register: tahoe_is_running
+  ignore_errors: True
+
+- name: ensure running
+  command: usewithtor /usr/local/bin/tahoe start {{ tahoe_client_dir }}
+  when: tahoe_is_running|failed
