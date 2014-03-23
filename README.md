@@ -34,17 +34,20 @@ Including an example of how to use your role (for instance, with variables passe
   user: ansible
   connection: ssh
   vars:
+    oniongrid_node_name: "TahoeOnionNode"
+    oniongrid_introducer_furl: "pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@kkkkkkkkkkkkkkkk.onion:9966/introducer"
     oniongrid_hidden_service_name: "tahoe-storage"
-    oniongrid_tub_port: 66600
+    oniongrid_tub_port: 43000
+    oniongrid_web_port: 3456
     oniongrid_hidden_services_parent_dir: "/var/lib/tor/services"
     oniongrid_hidden_services: [
-      { dir: "ssh", ports: [22] },
-      { dir: "tahoe-web", ports: [3456] },
-      { dir: "tahoe-storage", ports: [ "{{ oniongrid_tub_port }}" ] },
+      { dir: "ssh", ports: [{ virtport: 22666, target: '127.0.0.1:22' }] },
+      { dir: "tahoe-web", ports: [{ virtport: "{{ oniongrid_web_port }}", target: "127.0.0.1:{{ oniongrid_web_port }}" }] },
+      { dir: "tahoe-storage", ports: [{ virtport: "{{ oniongrid_tub_port }}", target: "127.0.0.1:{{ oniongrid_tub_port }}" }] },
     ]
   roles:
     - { role: ansible-role-firewall,
-        firewall_allowed_tcp_ports: [ 22, "{{ oniongrid_tub_port }}", 3456 ],
+        firewall_allowed_tcp_ports: [ 22, "{{ oniongrid_tub_port }}", "{{ oniongrid_web_port }}" ],
         sudo: yes
       }
     - { role: ansible-wheezy-common,
@@ -63,12 +66,12 @@ Including an example of how to use your role (for instance, with variables passe
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
         tahoe_client_dir: /home/ansible/tahoe_client,
         tahoe_client_config: /home/ansible/tahoe_client/tahoe.cfg,
-        tahoe_web_port: 3456,
-        tahoe_introducer_furl: "YOUR_INTRO_FURL_HERE",
+        tahoe_web_port: "{{ oniongrid_web_port }}",
+        tahoe_introducer_furl: "{{ oniongrid_introducer_furl }}",
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
-        tahoe_nickname: "AnsibleOnionGridRobotMemoryBank1",
+        tahoe_nickname: "{{ oniongrid_node_name }}",
         tahoe_tub_port: "{{ oniongrid_tub_port }}",
         tahoe_storage_enabled: "true",
         tahoe_hidden_service_name: "{{ oniongrid_hidden_service_name }}"
