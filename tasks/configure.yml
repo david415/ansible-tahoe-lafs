@@ -3,12 +3,28 @@
 - name: create tahoe client directory
   file: path={{ tahoe_client_dir }} state=directory
 
+- name: tahoe tac file
+  copy: src=tahoe-client.tac dest={{ tahoe_client_dir }}/tahoe-client.tac
+
+- name: wait for our tor hidden service onion hostname file
+  wait_for:
+    state: present
+    path: "{{ hostvars[inventory_hostname]['tor_hidden_services_parent_dir_fact'] }}/{{ tahoe_hidden_service_name }}/hostname"
+  sudo: yes
+
+- name: read in the .onion address of our tor hidden service
+  shell: "cat '{{ hostvars[inventory_hostname]['tor_hidden_services_parent_dir_fact'] }}/{{ tahoe_hidden_service_name }}/hostname'"
+  register: onion
+  sudo: yes
+
+- name: "here's our onion address!"
+  debug: msg="{{ onion.stdout }}"
+
 - name: template tahoe.cfg
   template: src=tahoe.cfg dest="{{ tahoe_client_config }}"
     mode=0600
-
-- name: tahoe tac file
-  copy: src=tahoe-client.tac dest={{ tahoe_client_dir }}/tahoe-client.tac
+  notify:
+  - restart tahoe
 
 - name: check if tahoe is running
   command: pgrep tahoe
@@ -18,3 +34,5 @@
 - name: ensure running
   command: usewithtor /usr/local/bin/tahoe start {{ tahoe_client_dir }}
   when: tahoe_is_running|failed
+
+

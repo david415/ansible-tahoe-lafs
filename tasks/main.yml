@@ -6,5 +6,7 @@
 - include: install.yml
   when: not tahoe_source_dir_st.stat.isdir is defined or tahoe_source_dir_st.stat.isdir != true
 
+
 - include: configure.yml
-# when not already configured...
+
+
