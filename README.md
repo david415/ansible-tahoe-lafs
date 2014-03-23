@@ -62,7 +62,7 @@ Including an example of how to use your role (for instance, with variables passe
         tor_hidden_services_parent_dir: "{{ oniongrid_hidden_services_parent_dir }}",
         sudo: yes
       }
-    - { role: ansible-tahoe-lafs,
+    - { role: david415.ansible-tahoe-lafs,
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
         tahoe_client_dir: /home/ansible/tahoe_client,
         tahoe_client_config: /home/ansible/tahoe_client/tahoe.cfg,
