@@ -10,7 +10,7 @@
   register: tahoe_source_dir_st
 
 # BUG: must usewithtor
-- name: git clone Leif's tahoe-lafs truckee branch
+- name: "git clone Leif's tahoe-lafs truckee branch"
   git: repo=https://github.com/leif/tahoe-lafs
     dest={{ tahoe_source_dir }}
     version=truckee
