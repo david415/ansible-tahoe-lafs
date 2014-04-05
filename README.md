@@ -24,8 +24,6 @@ Currently this role requires my ansible-tor role (https://github.com/david415/an
 Example Playbook: tahoe-lafs oniongrid!
 ---------------------------------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
 
 ```yml
 ---
@@ -51,6 +49,8 @@ Including an example of how to use your role (for instance, with variables passe
         sudo: yes
       }
     - { role: david415.ansible-tahoe-lafs,
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
         tahoe_client_dir: /home/ansible/tahoe_client,
         tahoe_client_config: "{{ tahoe_client_dir }}/tahoe.cfg",
