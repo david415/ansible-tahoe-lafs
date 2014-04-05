@@ -1,2 +1,8 @@
 ---
-# defaults file for ansible-tahoe-lafs
+
+tahoe_dep_tarball: "tahoe-deps.tar.gz"
+tahoe_dep_tarball_url: "https://tahoe-lafs.org/source/tahoe-lafs/deps/tahoe-deps.tar.gz"
+tahoe_tub_port: 61200
+tahoe_tub_location: "client.fakelocation:1"
+tahoe_storage_enabled: "false"
+

@@ -1,15 +1,30 @@
 ---
-- name: install package dependencies
+
+- name: ensure backports apt repo is setup
+  apt_repository: >
+    repo="deb {{ backports_url }} {{ backports_distribution_release }} main"
+    state=present 
+    update_cache=yes
+  sudo: yes
+
+- name: ensure twisted from backports is installed
+  apt: >
+    pkg=python-twisted
+    default_release="{{ backports_distribution_release }}"
+    state=present
+  sudo: yes
+
+- name: ensure tahoe dependencies are installed
   apt:
     pkg: "{{item}}"
     state: present
-  with_items: ["build-essential", "python-dev", "libffi-dev"]
+  with_items: ["build-essential", "python-dev", "libffi-dev", "git", "python-openssl"]
+  sudo: yes
 
 - name: check if tahoe-lafs is already installed
   stat: path={{ tahoe_source_dir }}
   register: tahoe_source_dir_st
 
-# BUG: must usewithtor
 - name: "git clone Leif's tahoe-lafs truckee branch"
   git: repo=https://github.com/leif/tahoe-lafs
     dest={{ tahoe_source_dir }}
@@ -20,10 +35,9 @@
   stat: path={{ tahoe_source_dir }}/{{ tahoe_dep_tarball }}
   register: tahoe_source_tarball_st
 
-# BUG: must usewithtor
 - name: download the tahoe-lafs dependency tarball
-  get_url: url={{ tahoe_dep_tarball_url }} dest={{ tahoe_source_dir }} mode=0440
-  when: tahoe_source_dir_st.stat.exist is not defined
+  get_url: url={{ tahoe_dep_tarball_url }} dest={{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} mode=0440
+  when: tahoe_source_tarball_st.stat.is is not defined
 
 # BUG: verify gpg signature instead of sha1sum
 - name: assert correct sha1sum of tahoe-lafs dep tarball
@@ -33,22 +47,16 @@
   stat: path={{ tahoe_source_dir }}/tahoe-deps
   register: st
 
-- name: create tahoe-deps directory
+- name: ensure tahoe-deps directory exists
   file: path={{ tahoe_source_dir }}/tahoe-deps state=directory
   when: st.stat.isdir is not defined
 
-- name: extract tahoe-deps tarball
+# BUG: what if the tar extraction gets interrupted?
+# bad news
+- name: extract tahoe-deps tarball if directory does not exist
   command: tar xf {{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} --directory {{ tahoe_source_dir }}
   when: st.stat.isdir is not defined
 
 - name: build tahoe-lafs
-  command: chdir={{ tahoe_source_dir }} python setup.py build
-
-- name: determine state of /usr/local/bin/tahoe
-  stat: path=/usr/local/bin/tahoe
-  register: st
-
-- name: create symlink to tahoe
-  file: src={{ tahoe_source_dir }}/bin/tahoe dest=/usr/local/bin/tahoe state=link
-  when: st.stat.islnk is not defined
+  shell: chdir={{ tahoe_source_dir }} http_proxy=localhost:0 https_proxy=localhost:0 python setup.py build
 

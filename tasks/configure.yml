@@ -1,6 +1,6 @@
 ---
 
-- name: create tahoe client directory
+- name: ensure client directory exists
   file: path={{ tahoe_client_dir }} state=directory
 
 - name: tahoe tac file
@@ -11,7 +11,7 @@
   register: onion
   sudo: yes
 
-- name: "here's our onion address!"
+- name: "here's our tahoe-storage onion address!"
   debug: msg="{{ onion.stdout }}"
 
 - name: template tahoe.cfg
@@ -20,13 +20,12 @@
   notify:
   - restart tahoe
 
-- name: check if tahoe is running
+- name: check state of tahoe process
   command: pgrep tahoe
   register: tahoe_is_running
   ignore_errors: True
 
-- name: ensure running
-  command: usewithtor /usr/local/bin/tahoe start {{ tahoe_client_dir }}
+- name: ensure tahoe is running
+  command: usewithtor {{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}
   when: tahoe_is_running|failed
-
 
