@@ -25,7 +25,9 @@
   stat: path={{ tahoe_source_dir }}
   register: tahoe_source_dir_st
 
+# BUG: verify gpg signature in git release tag
 # BUG: what happens if the git clone gets interrupted?
+# Use a debian package instead! It's much better!
 - name: "git clone Leif's tahoe-lafs truckee branch if directory is non-existent"
   git: repo=https://github.com/leif/tahoe-lafs
     dest={{ tahoe_source_dir }}
@@ -37,19 +39,20 @@
   register: tahoe_source_tarball_st
 
 - name: ensure tahoe-lafs dependency tarball is downloaded
-  get_url: url={{ tahoe_dep_tarball_url }} dest={{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} mode=0440
+  get_url: >
+    url={{ tahoe_dep_tarball_url }}
+    dest={{ tahoe_source_dir }}/{{ tahoe_dep_tarball }}
+    mode=0440
+    validate_certs=yes
+    sha256sum={{ tahoe_dep_tarball_sha256sum }}
   when: not tahoe_source_tarball_st.stat.exists
-
-# BUG: verify gpg signature in git release tag instead of sha1sum
-- name: assert correct sha1sum of tahoe-lafs dep tarball
-  shell: sha1sum {{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} | grep bfc0798f5f332ad5edb6d259391e4bb917283c17
 
 - name: get state of tahoe-deps directory
   stat: path={{ tahoe_source_dir }}/tahoe-deps
   register: st
 
 # BUG: what if the tar extraction gets interrupted?
-# bad news
+# bad news bears; use Debian package instead!
 - name: extract tahoe-deps tarball if directory does not exist
   command: tar xf {{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} --directory {{ tahoe_source_dir }}
   when: st.stat.isdir is not defined

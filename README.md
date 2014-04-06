@@ -32,8 +32,8 @@ Example Playbook: tahoe-lafs oniongrid!
     oniongrid_node_name: "TahoeOnionNode"
     oniongrid_introducer_furl: "pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@kkkkkkkkkkkkkkkk.onion:9966/introducer"
     oniongrid_hidden_service_name: "tahoe-storage"
-    oniongrid_tub_port: 43000
-    oniongrid_web_port: 3456
+    oniongrid_tub_port: "43000"
+    oniongrid_web_port: "3456"
     oniongrid_hidden_services_parent_dir: "/var/lib/tor/services"
     oniongrid_hidden_services: [
       { dir: "tahoe-web", ports: [{ virtport: "{{ oniongrid_web_port }}", target: "127.0.0.1:{{ oniongrid_web_port }}" }] },
@@ -49,21 +49,21 @@ Example Playbook: tahoe-lafs oniongrid!
         sudo: yes
       }
     - { role: david415.ansible-tahoe-lafs,
-        backports_url: "http://ftp.de.debian.org/debian/",
-        backports_distribution_release: "wheezy-backports",
-        tahoe_source_dir: /home/ansible/tahoe-lafs-src,
-        tahoe_client_dir: /home/ansible/tahoe_client,
-        tahoe_client_config: "{{ tahoe_client_dir }}/tahoe.cfg",
-        tahoe_web_port: "{{ oniongrid_web_port }}",
         tahoe_introducer_furl: "{{ oniongrid_introducer_furl }}",
+        tahoe_storage_enabled: "true",
+        tahoe_hidden_service_name: "{{ oniongrid_hidden_service_name }}",
+        tor_hidden_services_parent_dir: "{{ oniongrid_hidden_services_parent_dir }}",
+        tahoe_web_port: "tcp:{{ oniongrid_web_port }}:interface=127.0.0.1",
+        tahoe_tub_port: "tcp:{{ oniongrid_tub_port }}:interface=127.0.0.1",
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
         tahoe_nickname: "{{ oniongrid_node_name }}",
-        tahoe_tub_port: "{{ oniongrid_tub_port }}",
-        tahoe_storage_enabled: "true",
-        tahoe_hidden_service_name: "{{ oniongrid_hidden_service_name }}",
-        tor_hidden_services_parent_dir: "{{ oniongrid_hidden_services_parent_dir }}"
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: /home/ansible/tahoe-lafs-src,
+        tahoe_client_dir: /home/ansible/tahoe_client,
+        tahoe_client_config: "{{ tahoe_client_dir }}/tahoe.cfg"
       }
 ```
 
