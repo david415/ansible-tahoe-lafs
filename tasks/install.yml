@@ -25,31 +25,28 @@
   stat: path={{ tahoe_source_dir }}
   register: tahoe_source_dir_st
 
-- name: "git clone Leif's tahoe-lafs truckee branch"
+# BUG: what happens if the git clone gets interrupted?
+- name: "git clone Leif's tahoe-lafs truckee branch if directory is non-existent"
   git: repo=https://github.com/leif/tahoe-lafs
     dest={{ tahoe_source_dir }}
     version=truckee
   when: tahoe_source_dir_st.isdir is not defined
 
-- name: check if tahoe_dep_tarball exists
+- name: get state of tahoe_dep_tarball
   stat: path={{ tahoe_source_dir }}/{{ tahoe_dep_tarball }}
   register: tahoe_source_tarball_st
 
-- name: download the tahoe-lafs dependency tarball
+- name: ensure tahoe-lafs dependency tarball is downloaded
   get_url: url={{ tahoe_dep_tarball_url }} dest={{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} mode=0440
-  when: tahoe_source_tarball_st.stat.is is not defined
+  when: not tahoe_source_tarball_st.stat.exists
 
-# BUG: verify gpg signature instead of sha1sum
+# BUG: verify gpg signature in git release tag instead of sha1sum
 - name: assert correct sha1sum of tahoe-lafs dep tarball
   shell: sha1sum {{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} | grep bfc0798f5f332ad5edb6d259391e4bb917283c17
 
-- name: check if tahoe-deps directory
+- name: get state of tahoe-deps directory
   stat: path={{ tahoe_source_dir }}/tahoe-deps
   register: st
-
-- name: ensure tahoe-deps directory exists
-  file: path={{ tahoe_source_dir }}/tahoe-deps state=directory
-  when: st.stat.isdir is not defined
 
 # BUG: what if the tar extraction gets interrupted?
 # bad news
