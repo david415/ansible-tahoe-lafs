@@ -4,21 +4,34 @@ ansible-tahoe-lafs
 This is an ansible role for use with Tahoe-lafs - Least Authoratative Filesystem
 https://tahoe-lafs.org/trac/tahoe-lafs
 
-The current implementation is tor/oniongrid specific.
-Specifically we identify all tahoe nodes (storage,
-introducer etc) with tor hidden service addresses; onion addresses!
 
 
 Role Variables
 --------------
 
-more documentation coming soon! >_<
+The current implementation is no longer tor/oniongrid specific.
+If you can choose to specify the tahoe endpoint using the role
+variable "tahoe_tub_location". If "tahoe_tub_location" was not
+specified then you must define the role variables "tor_hidden_services" and
+"tor_hidden_services_parent_dir" so that the tor hidden service onion
+address for the tahoe service (storage or introducer) can be retrieved
+and used to templatize the tahoe.cfg configuration file.
+
+Additionally you must specify "use_torsocks: no" in order to not
+use torsocks/tor to install and run tahoe. However in the future when
+tahoe-lafs uses twisted endpoints there will no longer be any need
+for torsocks:
+
+ * https://tahoe-lafs.org/trac/tahoe-lafs/ticket/517
+ * http://foolscap.lothar.com/trac/ticket/203
+
 
 
 Dependencies
 ------------
 
 Works on Debian wheezy and probably Ubuntu as well.
+
 
 
 How to install the tahoe-lafs client locally?
@@ -51,7 +64,7 @@ local_tahoe_client.yml
     - { role: david415.ansible-tahoe-lafs,
         tahoe_git_url: "https://github.com/leif/tahoe-lafs",
         tahoe_git_branch: "truckee68",
-	use_torsocks: yes,
+        use_torsocks: yes,
         tahoe_introducer_furl: "pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@kkkkkkkkkkkkkkkk.onion:58086/introducer",
         tahoe_preferred_peers: ['meowwwwwwwwwwwwwwwwwwwwwwwwwwwww','mooooooooooooooooooooooooooooooo'],
         tahoe_tub_location: "client.fakelocation:1",
@@ -74,7 +87,6 @@ Run it like this:
 ```bash
 ansible-playbook local_tahoe_client.yml
 ```
-
 
 
 
@@ -137,5 +149,3 @@ Feedback, feature requests and bugreports welcome!
 --------------------------------------------------
 
 https://github.com/david415/ansible-tahoe-lafs/
-
-
