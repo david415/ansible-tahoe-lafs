@@ -1,5 +1,0 @@
----
-# handlers for ansible-tahoe-lafs
-
-- name: restart tahoe
-  command: usewithtor {{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_client_dir }}

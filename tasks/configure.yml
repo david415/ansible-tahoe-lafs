@@ -19,20 +19,23 @@
 - name: template tahoe.cfg
   template: src=tahoe.cfg dest="{{ tahoe_client_config }}"
     mode=0600
-  notify:
-  - restart tahoe
+  register: tahoe_template_status
+
+- name: restart tahoe is template changed
+  command: "{{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_client_dir }}"
+  when: tahoe_template_status.changed == True
 
 - name: check state of tahoe process
   command: pgrep tahoe
   register: tahoe_is_running
   ignore_errors: True
+  when: tahoe_template_status.changed != True
 
 - name: ensure tahoe is running with torsocks
   command: "usewithtor {{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}"
-  when: tahoe_is_running|failed and use_torsocks
+  when: tahoe_template_status.changed != True and (tahoe_is_running|failed and use_torsocks)
 
 - name: ensure tahoe is running without torsocks
   command: "{{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}"
-  when: tahoe_is_running|failed and not use_torsocks
-
+  when: tahoe_template_status.changed != True and (tahoe_is_running|failed and not use_torsocks)
 
