@@ -10,9 +10,11 @@
   shell: "cat '{{ tor_hidden_services_parent_dir }}/{{ tahoe_hidden_service_name }}/hostname'"
   register: onion
   sudo: yes
+  when: tor_hidden_services_parent_dir is defined
 
 - name: "here's our tahoe-storage onion address!"
   debug: msg="{{ onion.stdout }}"
+  when: tor_hidden_services_parent_dir is defined
 
 - name: template tahoe.cfg
   template: src=tahoe.cfg dest="{{ tahoe_client_config }}"
@@ -25,7 +27,12 @@
   register: tahoe_is_running
   ignore_errors: True
 
-- name: ensure tahoe is running
-  command: usewithtor {{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}
-  when: tahoe_is_running|failed
+- name: ensure tahoe is running with torsocks
+  command: "usewithtor {{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}"
+  when: tahoe_is_running|failed and use_torsocks
+
+- name: ensure tahoe is running without torsocks
+  command: "{{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}"
+  when: tahoe_is_running|failed and not use_torsocks
+
 
