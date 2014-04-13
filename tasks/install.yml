@@ -18,8 +18,14 @@
   apt:
     pkg: "{{item}}"
     state: present
-  with_items: ["torsocks", "build-essential", "python-dev", "libffi-dev", "git", "python-openssl"]
+  with_items: ["build-essential", "python-dev", "libffi-dev", "git", "python-openssl"]
   sudo: yes
+
+- name: install torsocks if use_torsocks is yes
+  apt:
+    pkg: torsocks
+    state: present
+  when: use_torsocks
 
 - name: check if tahoe-lafs is already installed
   stat: path={{ tahoe_source_dir }}
