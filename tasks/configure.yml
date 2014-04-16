@@ -1,10 +1,15 @@
 ---
 
 - name: ensure client directory exists
-  file: path={{ tahoe_client_dir }} state=directory
+  file: path={{ tahoe_run_dir }} state=directory
 
-- name: tahoe tac file
-  copy: src=tahoe-client.tac dest={{ tahoe_client_dir }}/tahoe-client.tac
+- name: tahoe client tac file
+  copy: src=tahoe-client.tac dest={{ tahoe_run_dir }}/tahoe-client.tac
+  when: not tahoe_introducer
+
+- name: tahoe introducer tac file
+  copy: src=tahoe-introducer.tac dest={{ tahoe_run_dir }}/tahoe-introducer.tac
+  when: tahoe_introducer
 
 - name: read in the .onion address of our tor hidden service
   shell: "cat '{{ tor_hidden_services_parent_dir }}/{{ tahoe_hidden_service_name }}/hostname'"
@@ -14,15 +19,38 @@
 
 - name: "here's our tahoe-storage onion address!"
   debug: msg="{{ onion.stdout }}"
-  when: tor_hidden_services_parent_dir is defined
+  when: not tahoe_introducer and tor_hidden_services_parent_dir is defined
+
+- name: assert defined tahoe_local_introducers_dir or tahoe_introducer_furl
+  assert:
+    that: "tahoe_local_introducers_dir is defined or tahoe_introducer_furl is defined"
+  when: not tahoe_introducer
+
+# TODO: support multiple introducers (e.g. truckee68 branch)
+# instead of just using the first introducer furl
+- name: "cat`ing local introducer furl files"
+  shell: "cat {{ tahoe_local_introducers_dir }}/* | head -n 1"
+  delegate_to: 127.0.0.1
+  connection: local
+  register: introducer_furl_files
+  when: not tahoe_introducer and tahoe_local_introducers_dir is defined
+
+- name: here is our introducer furl
+  debug: msg="{{ introducer_furl_files.stdout }}"
+  when: not tahoe_introducer and tahoe_local_introducers_dir is defined
+
+- name: set introducer furl variable from local introducer inventory
+  set_fact:
+    tahoe_introducer_furl: "{{ introducer_furl_files.stdout }}"
+  when: not tahoe_introducer and tahoe_local_introducers_dir is defined
 
 - name: template tahoe.cfg
-  template: src=tahoe.cfg dest="{{ tahoe_client_config }}"
+  template: src=tahoe.cfg dest="{{ tahoe_run_dir }}/tahoe.cfg"
     mode=0600
   register: tahoe_template_status
 
 - name: restart tahoe is template changed
-  command: "{{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_client_dir }}"
+  command: "{{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_run_dir }}"
   when: tahoe_template_status.changed == True
 
 - name: check state of tahoe process
@@ -32,10 +60,20 @@
   when: tahoe_template_status.changed != True
 
 - name: ensure tahoe is running with torsocks
-  command: "usewithtor {{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}"
+  command: "usewithtor {{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_run_dir }}"
   when: tahoe_template_status.changed != True and (tahoe_is_running|failed and use_torsocks)
 
 - name: ensure tahoe is running without torsocks
-  command: "{{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_client_dir }}"
+  command: "{{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_run_dir }}"
   when: tahoe_template_status.changed != True and (tahoe_is_running|failed and not use_torsocks)
 
+- name: wait for tahoe-lafs introducer furl file
+  wait_for: state=present path="{{ tahoe_run_dir }}/private/introducer.furl" delay=5
+  when: tahoe_introducer
+
+- name: copy the private introducer furl file to local inventory
+  fetch:
+    flat: yes
+    src: "{{ tahoe_run_dir }}/private/introducer.furl"
+    dest: "{{ tahoe_local_introducers_dir }}/{{ inventory_hostname }}-introducer.furl"
+  when: tahoe_introducer

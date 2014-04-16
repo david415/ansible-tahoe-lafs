@@ -33,6 +33,120 @@ Dependencies
 Works on Debian wheezy and probably Ubuntu as well.
 
 
+Install an entire tahoe grid over tor hidden services
+-----------------------------------------------------
+
+This play book will install/configure tahoe-lafs introducer(s),
+storage nodes and a local client using torsocks (usewithtor) and tor
+hidden services. Actually the tor components are optional but I have
+not test much without them.
+
+One noteable design decision/feature is that after the introducer node
+is create we save it's furl to a local file named after the
+machine... and then later plays such as the tahoe-lafs storage or client node
+play can access this directory and read all the introducer furls. For
+the moment the first introducer furl is picked but soon we plan on
+supporting multiple introducers (see tahoe-lafs repo branch truckee68
+regarding mutliple introducers).
+
+
+```yml
+---
+- hosts: oniongrid-introducer-nodes
+  vars:
+    node_name: "IntroducerNode"
+    hidden_service_name: "tahoe-introducer"
+    tub_port: "33000"
+    web_port: "3456"
+    hidden_services_parent_dir: "/var/lib/tor/services"
+    hidden_services: [
+      { dir: "tahoe-web", ports: [{ virtport: "{{ web_port }}", target: "127.0.0.1:{{ web_port }}" }] },
+      { dir: "tahoe-introducer", ports: [{ virtport: "{{ tub_port }}", target: "127.0.0.1:{{ tub_port }}" }] },
+    ]
+  roles:
+    - { role: david415.ansible-tor,
+        tor_wait_for_hidden_services: yes,
+        tor_distribution_release: "wheezy",
+        tor_ExitPolicy: "reject *:*",
+        tor_hidden_services: "{{ hidden_services }}",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        sudo: yes
+      }
+    - { role: david415.ansible-tahoe-lafs,
+        tahoe_introducer: yes,
+        tahoe_local_introducers_dir: "/home/human/projects/ansible-project/tahoe-lafs_introducers",
+        use_torsocks: yes,
+        tahoe_hidden_service_name: "{{ hidden_service_name }}",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        tahoe_introducer_port: "{{ tub_port }}",
+        tahoe_web_port: "{{ web_port }}",
+        tahoe_tub_port: "{{ tub_port }}",
+        tahoe_shares_needed: 2,
+        tahoe_shares_happy: 3,
+        tahoe_shares_total: 4,
+        tahoe_nickname: "{{ node_name }}",
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: /home/ansible/tahoe-lafs-src,
+        tahoe_run_dir: /home/ansible/tahoe_introducer
+      }
+- hosts: oniongrid-storage-nodes
+  vars:
+    node_name: "storage"
+    hidden_service_name: "tahoe-storage"
+    tub_port: "47320"
+    web_port: "4456"
+    hidden_services_parent_dir: "/var/lib/tor/services"
+    hidden_services: [
+      { dir: "tahoe-web", ports: [{ virtport: "{{ web_port }}", target: "127.0.0.1:{{ web_port }}" }] },
+      { dir: "tahoe-storage", ports: [{ virtport: "{{ tub_port }}", target: "127.0.0.1:{{ tub_port }}" }] },
+    ]
+  roles:
+    - { role: david415.ansible-tor,
+        tor_wait_for_hidden_services: yes,
+        tor_distribution_release: "wheezy",
+        tor_ExitPolicy: "reject *:*",
+        tor_hidden_services: "{{ hidden_services }}",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        sudo: yes
+      }
+    - { role: david415.ansible-tahoe-lafs,
+        tahoe_storage_enabled: "true",
+        tahoe_local_introducers_dir: "/home/human/projects/ansible-project/tahoe-lafs_introducers",
+        tahoe_hidden_service_name: "{{ hidden_service_name }}",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        tahoe_web_port: "{{ web_port }}",
+        tahoe_tub_port: "{{ tub_port }}",
+        tahoe_shares_needed: 2,
+        tahoe_shares_happy: 3,
+        tahoe_shares_total: 4,
+        tahoe_nickname: "{{ node_name }}",
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: /home/ansible/tahoe-lafs-src,
+        tahoe_run_dir: /home/ansible/tahoe_storage321
+      }
+- hosts: 127.0.0.1
+  connection: local
+  roles:
+    - { role: david415.ansible-tahoe-lafs,
+        tahoe_git_url: "https://github.com/leif/tahoe-lafs",
+        tahoe_git_branch: "truckee68",
+        tahoe_local_introducers_dir: "/home/human/projects/ansible-project/tahoe-lafs_introducers",
+        tahoe_tub_location: "client.fakelocation:1",
+        tahoe_storage_enabled: "false",
+        tahoe_web_port: "3456",
+        tahoe_shares_needed: 2,
+        tahoe_shares_happy: 3,
+        tahoe_shares_total: 4,
+        tahoe_nickname: "client",
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: /home/human/ansible-tahoe/tahoe-lafs-src,
+        tahoe_run_dir: /home/human/ansible-tahoe/tahoe_test_client,
+      }
+```
+
 
 How to install the tahoe-lafs client locally?
 ---------------------------------------------
@@ -62,14 +176,15 @@ local_tahoe_client.yml
   connection: local
   roles:
     - { role: david415.ansible-tahoe-lafs,
+        tahoe_client: yes,
         tahoe_git_url: "https://github.com/leif/tahoe-lafs",
         tahoe_git_branch: "truckee68",
-        use_torsocks: yes,
-        tahoe_introducer_furl: "pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@kkkkkkkkkkkkkkkk.onion:58086/introducer",
+        tahoe_introducer_furl:
+	"pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@kkkkkkkkkkkkkkkk.onion:58086/swissnum",
         tahoe_preferred_peers: ['meowwwwwwwwwwwwwwwwwwwwwwwwwwwww','mooooooooooooooooooooooooooooooo'],
         tahoe_tub_location: "client.fakelocation:1",
         tahoe_storage_enabled: "false",
-        tahoe_web_port: "tcp:3456:interface=127.0.0.1",
+        tahoe_web_port: "3456",
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
@@ -77,8 +192,7 @@ local_tahoe_client.yml
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/human/ansible-tahoe/tahoe-lafs-src,
-        tahoe_client_dir: /home/human/ansible-tahoe/tahoe_client,
-        tahoe_client_config: "{{ tahoe_client_dir }}/tahoe.cfg"
+        tahoe_run_dir: /home/human/ansible-tahoe/tahoe_client
       }
 ```
 
@@ -89,9 +203,57 @@ ansible-playbook local_tahoe_client.yml
 ```
 
 
+Example tahoe-lafs introducer node playbook
+-------------------------------------------
 
-Example Playbook: tahoe-lafs oniongrid storage node!
-----------------------------------------------------
+Run a tahoe-lafs introducer node listening to a tor hidden service port:
+
+```yml
+---
+- hosts: oniongrid-introducer-nodes
+  vars:
+    node_name: "IntroducerNode"
+    hidden_service_name: "tahoe-introducer"
+    tub_port: "13000"
+    web_port: "1456"
+    hidden_services_parent_dir: "/var/lib/tor/services"
+    hidden_services: [
+      { dir: "tahoe-web", ports: [{ virtport: "{{ web_port }}", target: "127.0.0.1:{{ web_port }}" }] },
+      { dir: "{{ hidden_service_name }}", ports: [{ virtport: "{{ tub_port }}", target: "127.0.0.1:{{ tub_port }}" }] },
+    ]
+  roles:
+    - { role: david415.ansible-tor,
+        tor_wait_for_hidden_services: yes,
+        tor_distribution_release: "wheezy",
+        tor_ExitPolicy: "reject *:*",
+        tor_hidden_services: "{{ hidden_services }}",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        sudo: yes
+      }
+    - { role: david415.ansible-tahoe-lafs,
+        tahoe_introducer: yes,
+        use_torsocks: yes,
+        tahoe_hidden_service_name: "{{ hidden_service_name }}",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        tahoe_introducer_port: "{{ tub_port }}",
+        tahoe_local_introducers_dir: "/home/human/projects/ansible-project/tahoe-lafs_introducers",
+        tahoe_web_port: "{{ web_port }}",
+        tahoe_tub_port: "{{ tub_port }}",
+        tahoe_shares_needed: 2,
+        tahoe_shares_happy: 3,
+        tahoe_shares_total: 4,
+        tahoe_nickname: "{{ node_name }}",
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: /home/ansible/tahoe-lafs-src,
+        tahoe_run_dir: /home/ansible/tahoe_introducer
+      }
+```
+
+
+
+Example tahoe-lafs over tor ("oniongrid") storage node
+------------------------------------------------------
 
 
 ```yml
@@ -109,7 +271,6 @@ Example Playbook: tahoe-lafs oniongrid storage node!
       { dir: "tahoe-storage", ports: [{ virtport: "{{ oniongrid_tub_port }}", target: "127.0.0.1:{{ oniongrid_tub_port }}" }] },
     ]
   roles:
-        # https://github.com/david415/ansible-tor
     - { role: david415.ansible-tor,
         tor_wait_for_hidden_services: yes,
         tor_distribution_release: "wheezy",
@@ -123,8 +284,8 @@ Example Playbook: tahoe-lafs oniongrid storage node!
         tahoe_storage_enabled: "true",
         tahoe_hidden_service_name: "{{ oniongrid_hidden_service_name }}",
         tor_hidden_services_parent_dir: "{{ oniongrid_hidden_services_parent_dir }}",
-        tahoe_web_port: "tcp:{{ oniongrid_web_port }}:interface=127.0.0.1",
-        tahoe_tub_port: "tcp:{{ oniongrid_tub_port }}:interface=127.0.0.1",
+        tahoe_web_port: "{{ oniongrid_web_port }}",
+        tahoe_tub_port: "{{ oniongrid_tub_port }}",
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
@@ -132,8 +293,7 @@ Example Playbook: tahoe-lafs oniongrid storage node!
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
-        tahoe_client_dir: /home/ansible/tahoe_client,
-        tahoe_client_config: "{{ tahoe_client_dir }}/tahoe.cfg"
+        tahoe_run_dir: /home/ansible/tahoe_storage123,
       }
 ```
 
