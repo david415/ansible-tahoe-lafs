@@ -1,53 +1,125 @@
 ansible-tahoe-lafs
 ==================
 
-This is an ansible role for use with Tahoe-lafs - Least Authoratative Filesystem
+Use this Ansible role with Tahoe-lafs - Least Authoratative Filesystem
 https://tahoe-lafs.org/trac/tahoe-lafs
 
+This ansible role can help you reduce the complexity to a single
+command for deploying one or more Tahoe-LAFS storage servers,
+introducers and clients.
+
+
+Disclaimer
+----------
+
+There are probably bugs. This Ansible role is designed to be used with
+Tor and Tahoe-LAFS. It is possible it could also be used to configure
+Tahoe-LAFS grids without Tor... however this isn't how I use
+Tahoe-LAFS, so I only tested it with Tor (torsocks + Tor Hidden Services).
+
+
+A word about Ansible
+--------------------
+
+Make sure you are using ansible according to the best practices
+directory-layout specified here:
+
+http://docs.ansible.com/playbooks_best_practices.html#directory-layout
+
+This Ansible role belongs in your "roles" directory.
+
+
+Tor integration
+---------------
+
+Why would anyone want to run Tahoe-LAFS over Tor?
+
+Tor augments the security guarantees of Tahoe-LAFS in a good way.
+File storage infrastructure that can be hosted and accessed anonymously with
+verified end to end crypto and data redundancy could be very useful
+for a wide range of projects. In particular, this has a lot of
+potential to aid censorship resistance of sensitive documents for
+instance. Many important tools could be built using this Tor +
+Tahoe-LAFS integration... and those tools may prove to be extremely
+valuable in helping to protect against violations of freespeech and
+human rights.
+
+
+What is an onion grid?
+
+An onion grid is a Tahoe-LAFS grid which is only accessible through
+the Tor network because the introducer and storage nodes only listen for
+connections on Tor Hidden Servies. This means that both the storage
+servers and the clients will be anonymous. It also means the
+introducer FURL will contain a Tor onion address. Currently it is
+recommended that Leif Ryge's "truckee68" branch be used for this
+purpose; it is especially important for Tahoe clients to set their
+"tub location", otherwise their IP address could be leaked. Like this:
+
+```
+tahoe_tub_location: "client.fakelocation:1"
+```
+
+I am currently working on native Tor integration for
+Tahoe-LAFS which will have many advantages over the current Tor
+integration system which uses torsocks. I do not currently have a
+time-estimate of when I will be done :
+
+```
+ * https://tahoe-lafs.org/trac/tahoe-lafs/ticket/517
+ * http://foolscap.lothar.com/trac/ticket/203
+```
+
+
+How does this Ansible role configure Tor?
+
+If you look at the example playbooks below you'll see that they all
+use my "ansible-tor" role; here's the github url for that:
+
+https://github.com/david415/ansible-tor
+
+In the future, when the native Tor integration for Tahoe-LAFS is
+complete then it may become unnecessary to use the ansible-tor role
+with Tahoe-LAFS.
 
 
 Role Variables
 --------------
 
-The current implementation is no longer tor/oniongrid specific.
-If you can choose to specify the tahoe endpoint using the role
-variable "tahoe_tub_location". If "tahoe_tub_location" was not
-specified then you must define the role variables "tor_hidden_services" and
+"tahoe_nickname" is a hostvar... meaning that you can set this variable
+in your host inventory file or in a host group variable file.
+For example your inventory file could have an entry that looks like
+this:
+
+192.168.1.123 tahoe_nickname=AnsibleTahoeStorage77
+
+
+If the "tahoe_tub_location" role variable was not specified then you
+must define the role variables "tor_hidden_services" and 
 "tor_hidden_services_parent_dir" so that the tor hidden service onion
 address for the tahoe service (storage or introducer) can be retrieved
 and used to templatize the tahoe.cfg configuration file.
-
-Additionally you must specify "use_torsocks: no" in order to not
-use torsocks/tor to install and run tahoe. However in the future when
-tahoe-lafs uses twisted endpoints there will no longer be any need
-for torsocks:
-
- * https://tahoe-lafs.org/trac/tahoe-lafs/ticket/517
- * http://foolscap.lothar.com/trac/ticket/203
-
 
 
 Dependencies
 ------------
 
-Works on Debian wheezy and probably Ubuntu as well.
+Works on Debian wheezy and Ubuntu.
 
 
-Install an entire tahoe grid over tor hidden services
------------------------------------------------------
+Install an entire Tahoe-LAFS onion grid
+---------------------------------------
 
-This play book will install/configure tahoe-lafs introducer(s),
-storage nodes and a local client using torsocks (usewithtor) and tor
-hidden services. Actually the tor components are optional but I have
-not test much without them.
 
-One noteable design decision/feature is that after the introducer node
-is create we save it's furl to a local file named after the
-machine... and then later plays such as the tahoe-lafs storage or client node
-play can access this directory and read all the introducer furls. For
-the moment the first introducer furl is picked but soon we plan on
-supporting multiple introducers (see tahoe-lafs repo branch truckee68
-regarding mutliple introducers).
+One noteable feature when configuring Tahoe-LAFS introducers, is that
+after the introducer node is created, we save it's FURL to a local
+file located in the parent directory of your choosing.
+
+After the introducer node is created... the other Ansible "plays" that need the
+introducer FURLs get it from this local introducer FURL list. For the moment only
+the first introducer furl is used... but soon we plan on supporting
+multiple introducers (see tahoe-lafs repo branch truckee68 regarding
+mutliple introducers).
 
 
 ```yml
@@ -84,7 +156,6 @@ regarding mutliple introducers).
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
-        tahoe_nickname: "{{ node_name }}",
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
@@ -120,7 +191,6 @@ regarding mutliple introducers).
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
-        tahoe_nickname: "{{ node_name }}",
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
@@ -139,7 +209,6 @@ regarding mutliple introducers).
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
-        tahoe_nickname: "client",
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/human/ansible-tahoe/tahoe-lafs-src,
@@ -151,11 +220,7 @@ regarding mutliple introducers).
 How to install the tahoe-lafs client locally?
 ---------------------------------------------
 
-Firstly, make sure you are using ansible according to the best practices directory-layout specified here:
-
-http://docs.ansible.com/playbooks_best_practices.html#directory-layout
-
-Secondly, if you are running ansible from within a python virtualenv
+If you are running ansible from within a python virtualenv
 then you will want to create that virtualenv like this:
 
 ```bash
@@ -188,7 +253,6 @@ local_tahoe_client.yml
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
-        tahoe_nickname: "client",
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/human/ansible-tahoe/tahoe-lafs-src,
@@ -242,7 +306,6 @@ Run a tahoe-lafs introducer node listening to a tor hidden service port:
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
-        tahoe_nickname: "{{ node_name }}",
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
@@ -289,7 +352,6 @@ Example tahoe-lafs over tor ("oniongrid") storage node
         tahoe_shares_needed: 2,
         tahoe_shares_happy: 3,
         tahoe_shares_total: 4,
-        tahoe_nickname: "{{ oniongrid_node_name }}",
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
         tahoe_source_dir: /home/ansible/tahoe-lafs-src,
