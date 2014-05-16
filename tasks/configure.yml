@@ -50,7 +50,7 @@
   register: tahoe_template_status
 
 - name: restart tahoe is template changed
-  command: "{{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_run_dir }}"
+  command: "usewithtor {{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_run_dir }}"
   when: tahoe_template_status.changed == True
 
 - name: check state of tahoe process

@@ -3,6 +3,7 @@
 use_torsocks: yes
 
 tahoe_introducer: no
+tahoe_client: no
 
 tahoe_git_url: "https://github.com/leif/tahoe-lafs"
 tahoe_git_branch: "truckee68"
