@@ -49,9 +49,13 @@
     mode=0600
   register: tahoe_template_status
 
-- name: restart tahoe is template changed
+- name: restart tahoe with torsocks if template changed
   command: "usewithtor {{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_run_dir }}"
-  when: tahoe_template_status.changed == True
+  when: tahoe_template_status.changed == True and run_with_torsocks
+
+- name: restart tahoe without torsocks if template changed
+  command: "{{ tahoe_source_dir }}/bin/tahoe restart {{ tahoe_run_dir }}"
+  when: tahoe_template_status.changed == True and not run_with_torsocks
 
 - name: check state of tahoe process
   command: pgrep tahoe
@@ -61,11 +65,11 @@
 
 - name: ensure tahoe is running with torsocks
   command: "usewithtor {{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_run_dir }}"
-  when: tahoe_template_status.changed != True and (tahoe_is_running|failed and use_torsocks)
+  when: tahoe_is_running|failed and run_with_torsocks
 
 - name: ensure tahoe is running without torsocks
   command: "{{ tahoe_source_dir }}/bin/tahoe start {{ tahoe_run_dir }}"
-  when: tahoe_template_status.changed != True and (tahoe_is_running|failed and not use_torsocks)
+  when: tahoe_is_running|failed and not run_with_torsocks
 
 - name: wait for tahoe-lafs introducer furl file
   wait_for: state=present path="{{ tahoe_run_dir }}/private/introducer.furl" delay=5

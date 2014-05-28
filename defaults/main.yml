@@ -1,6 +1,10 @@
 ---
 
-use_torsocks: yes
+
+install_with_torsocks: yes
+
+# this will go away once we have native tor integration for tahoe-lafs
+run_with_torsocks: yes
 
 tahoe_introducer: no
 tahoe_client: no
