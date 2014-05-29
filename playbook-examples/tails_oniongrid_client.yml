@@ -19,6 +19,6 @@
         tahoe_nickname: "client",
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
-        tahoe_source_dir: /home/amnesia/persistent/tahoe-misc/tahoe-lafs-src,
-        tahoe_run_dir: /home/amnesia/persistent/tahoe-misc/tahoe_client
+        tahoe_source_dir: /home/amnesia/Persistent/tahoe-misc/tahoe-lafs-src,
+        tahoe_run_dir: /home/amnesia/Persistent/tahoe-misc/tahoe_client
       }
