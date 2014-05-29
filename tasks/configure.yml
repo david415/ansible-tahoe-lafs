@@ -81,3 +81,12 @@
     src: "{{ tahoe_run_dir }}/private/introducer.furl"
     dest: "{{ tahoe_local_introducers_dir }}/{{ inventory_hostname }}-introducer.furl"
   when: tahoe_introducer
+
+- name: setup Tails user home .tahoe symlink
+  file: src="{{ tahoe_run_dir }}" dest=/home/amnesia/.tahoe state=link
+  when: setup_tails_dotfiles
+
+- name: create Tails dotfiles symlink for tahoe client directory
+  file: src="{{ tahoe_run_dir }}" dest="{{ tails_dotfiles_dir }}/.tahoe" state=link
+  when: setup_tails_dotfiles
+

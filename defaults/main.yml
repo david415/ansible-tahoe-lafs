@@ -1,6 +1,7 @@
 ---
 
-
+setup_tails_dotfiles: no
+tails_dotfiles_dir: "/live/persistence/TailsData_unlocked/dotfiles/"
 install_with_torsocks: yes
 
 # this will go away once we have native tor integration for tahoe-lafs

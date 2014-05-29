@@ -3,6 +3,7 @@
   connection: local
   roles:
     - { role: ansible-tahoe-lafs,
+        setup_tails_dotfiles: yes,
         install_with_torsocks: no,
         run_with_torsocks: yes,
         tahoe_client: yes,
