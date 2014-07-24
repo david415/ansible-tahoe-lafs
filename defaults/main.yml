@@ -6,7 +6,7 @@ tahoe_introducer: no
 tahoe_client: no
 
 tahoe_git_url: "https://github.com/leif/tahoe-lafs"
-tahoe_git_branch: "truckee68"
+tahoe_git_branch: "truckee"
 
 tahoe_dep_tarball: "tahoe-deps.tar.gz"
 tahoe_dep_tarball_url: "https://tahoe-lafs.org/source/tahoe-lafs/deps/tahoe-deps.tar.gz"
