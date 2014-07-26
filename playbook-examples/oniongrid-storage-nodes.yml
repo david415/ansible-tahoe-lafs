@@ -1,0 +1,38 @@
+---
+- hosts: onion-storage
+  vars:
+    oniongrid_introducer_furl: "pb://ifwpslh5f4jx2s3tzkkj4cyymrcxcunz@bvkb2rnvjbep4sjz.onion:58086/introducer"
+    oniongrid_hidden_service_name: "tahoe-storage"
+    oniongrid_tub_port: "43000"
+    oniongrid_web_port: "3456"
+    oniongrid_hidden_services_parent_dir: "/var/lib/tor/services"
+    oniongrid_hidden_services: [
+      { dir: "tahoe-web", ports: [{ virtport: "{{ oniongrid_web_port }}", target: "127.0.0.1:{{ oniongrid_web_port }}" }] },
+      { dir: "tahoe-storage", ports: [{ virtport: "{{ oniongrid_tub_port }}", target: "127.0.0.1:{{ oniongrid_tub_port }}" }] },
+    ]
+  roles:
+    - { role: ansible-tor,
+        tor_wait_for_hidden_services: yes,
+        tor_distribution_release: "wheezy",
+        tor_ExitPolicy: "reject *:*",
+        tor_hidden_services: "{{ oniongrid_hidden_services }}",
+        tor_hidden_services_parent_dir: "{{ oniongrid_hidden_services_parent_dir }}",
+        sudo: yes
+      }
+    - { role: ansible-tahoe-lafs,
+        tahoe_introducer_furl: "{{ oniongrid_introducer_furl }}",
+        tahoe_storage_enabled: "true",
+        tahoe_hidden_service_name: "{{ oniongrid_hidden_service_name }}",
+        tor_hidden_services_parent_dir: "{{ oniongrid_hidden_services_parent_dir }}",
+        tahoe_web_port: "{{ oniongrid_web_port }}",
+        tahoe_tub_port: "{{ oniongrid_tub_port }}",
+        tahoe_shares_needed: 2,
+        tahoe_shares_happy: 3,
+        tahoe_shares_total: 4,
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: /home/amnesia/Persistent/ansible-tahoe-base/tahoe-lafs-src,
+        tahoe_run_dir: /home/amnesia/Persistent/ansible-tahoe-base/tahoe_client
+      }
+
+
