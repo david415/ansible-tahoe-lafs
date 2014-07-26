@@ -31,8 +31,8 @@
         tahoe_shares_total: 4,
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
-        tahoe_source_dir: /home/amnesia/Persistent/ansible-tahoe-base/tahoe-lafs-src,
-        tahoe_run_dir: /home/amnesia/Persistent/ansible-tahoe-base/tahoe_client
+        tahoe_source_dir: /home/amnesia/ansible-tahoe-base/tahoe-lafs-src,
+        tahoe_run_dir: /home/amnesia/ansible-tahoe-base/tahoe_client
       }
 
 
