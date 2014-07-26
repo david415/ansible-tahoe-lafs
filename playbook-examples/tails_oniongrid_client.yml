@@ -1,0 +1,23 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  roles:
+    - { role: ansible-tahoe-lafs,
+        setup_tails_dotfiles: yes,
+        install_with_torsocks: no,
+        run_with_torsocks: yes,
+        tahoe_client: yes,
+        tahoe_web_port: "7657", # the Tails browser allows connecting to port 7657; http://127.0.0.1:7657/
+        tahoe_introducer_furl: "pb://ifwpslh5f4jx2s3tzkkj4cyymrcxcunz@bvkb2rnvjbep4sjz.onion:58086/introducer",
+        #tahoe_preferred_peers: ['node-id-1', 'node-id-2']
+        tahoe_tub_location: "client.fakelocation:1",
+        tahoe_storage_enabled: "false",
+        tahoe_shares_needed: 3,
+        tahoe_shares_happy: 8,
+        tahoe_shares_total: 8,
+        tahoe_nickname: "client",
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: /home/amnesia/Persistent/tahoe-base/tahoe-lafs-src,
+        tahoe_run_dir: /home/amnesia/Persistent/tahoe-base/tahoe_client
+      }

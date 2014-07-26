@@ -21,11 +21,11 @@
   with_items: ["build-essential", "python-dev", "libffi-dev", "git", "python-openssl"]
   sudo: yes
 
-- name: install torsocks if use_torsocks is yes
+- name: install torsocks?
   apt:
     pkg: torsocks
     state: present
-  when: use_torsocks
+  when: install_with_torsocks
   sudo: yes
 
 - name: check if tahoe-lafs is already installed
@@ -39,15 +39,15 @@
   git: repo="{{ tahoe_git_url }}"
     dest="{{ tahoe_source_dir }}"
     version="{{ tahoe_git_branch }}"
-  when: tahoe_source_dir_st.stat.isdir is not defined and not use_torsocks
+  when: tahoe_source_dir_st.stat.isdir is not defined and not install_with_torsocks
 
 - name: "usewithtor git clone {{ tahoe_git_url }} {{ tahoe_source_dir }}"
   command: "usewithtor git clone {{ tahoe_git_url }} {{ tahoe_source_dir }}"
-  when: tahoe_source_dir_st.stat.isdir is not defined and use_torsocks
+  when: tahoe_source_dir_st.stat.isdir is not defined and install_with_torsocks
 
 - name: "switch to {{ tahoe_git_branch }} git branch"
   command: "chdir={{ tahoe_source_dir }} git checkout {{ tahoe_git_branch }}"
-  when: tahoe_source_dir_st.stat.isdir is not defined and use_torsocks
+  when: tahoe_source_dir_st.stat.isdir is not defined and install_with_torsocks
 
 - name: get state of tahoe_dep_tarball
   stat: path={{ tahoe_source_dir }}/{{ tahoe_dep_tarball }}
@@ -60,11 +60,11 @@
     mode=0440
     validate_certs=yes
     sha256sum={{ tahoe_dep_tarball_sha256sum }}
-  when: not tahoe_source_tarball_st.stat.exists and not use_torsocks
+  when: not tahoe_source_tarball_st.stat.exists and not install_with_torsocks
 
 - name: usewithtor wget {{ tahoe_dep_tarball_url }}
   command: usewithtor wget -O {{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} {{ tahoe_dep_tarball_url }}
-  when: not tahoe_source_tarball_st.stat.exists and use_torsocks
+  when: not tahoe_source_tarball_st.stat.exists and install_with_torsocks
 
 - name: tarball checksum comparison
   shell: "sha256sum {{ tahoe_source_dir }}/{{ tahoe_dep_tarball }} | cut -d ' ' -f 1"
