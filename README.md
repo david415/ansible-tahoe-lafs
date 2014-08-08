@@ -107,6 +107,80 @@ Dependencies
 Works on Debian wheezy and Ubuntu.
 
 
+Install a onion storage node and introducer node on one machine
+---------------------------------------------------------------
+
+If you want to setup an new onion grid with some friends then it might
+make sense for you to start off by running this playbook. It'll configure
+a single machine to run two instances of Tahoe-LAFS: one for an introducer
+and one for a storage node.
+
+It will generate an introducer FURL... and store it locally in a file...
+and you can distribute this introducer FURL to your friends so that they
+can configure their storage servers to join the onion grid.
+
+You'll probably have to change the tahoe_local_introducers_dir, tahoe_source_dir and tahoe_run_dir variables in this playbook to match how you'd like to store your data. As you can see from the way I've specified tahoe_local_introducers_dir I'm obviously running Ansible from a Tails workstation... and the way I've set tahoe_server_dir and tahoe_run_dir indicates that I've got a user on that remote system called "human"... and I'm storing the tahoe directories in human's home directory.
+
+```yml
+---
+- hosts: onion-introducer-storage
+  vars:
+    hidden_services_parent_dir: "/var/lib/tor/services"
+    introducer_node_name: "IntroducerNode"
+    introducer_tub_port: "33000"
+    introducer_web_port: "33001"
+    storage_service_name: "storage"
+    storage_tub_port: "34000"
+    storage_web_port: "34001"
+    hidden_services: [
+      { dir: "intro-web", ports: [{ virtport: "{{ introducer_web_port }}", target: "127.0.0.1:{{ introducer_web_port }}" }] },
+      { dir: "introducer", ports: [{ virtport: "{{ introducer_tub_port }}", target: "127.0.0.1:{{ introducer_tub_port }}" }] },
+      { dir: "storage-web", ports: [{ virtport: "{{ storage_web_port }}", target: "127.0.0.1:{{ storage_web_port }}" }] },
+      { dir: "storage", ports: [{ virtport: "{{ storage_tub_port }}", target: "127.0.0.1:{{ storage_tub_port }}" }] },
+    ]
+  roles:
+    - { role: ansible-tor,
+        tor_wait_for_hidden_services: yes,
+        tor_distribution_release: "wheezy",
+        tor_ExitPolicy: "reject *:*",
+        tor_hidden_services: "{{ hidden_services }}",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        sudo: yes
+      }
+    - { role: ansible-tahoe-lafs,
+        tahoe_introducer: yes,
+        tahoe_local_introducers_dir: "/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers",
+        use_torsocks: yes,
+        tahoe_hidden_service_name: "introducer",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        tahoe_introducer_port: "{{ introducer_tub_port }}",
+        tahoe_web_port: "{{ introducer_web_port }}",
+        tahoe_tub_port: "{{ introducer_tub_port }}",
+        tahoe_shares_needed: 2,
+        tahoe_shares_happy: 3,
+        tahoe_shares_total: 4,
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: "/home/human/tahoe-lafs-src",
+        tahoe_run_dir: "/home/human/tahoe_introducer"
+      }
+    - { role: ansible-tahoe-lafs,
+        tahoe_local_introducers_dir: "/home/amnesia/Persistent/projects/ansible-base/tahoe-lafs_introducers",
+        tahoe_storage_enabled: "true",
+        tahoe_hidden_service_name: "storage",
+        tor_hidden_services_parent_dir: "{{ hidden_services_parent_dir }}",
+        tahoe_web_port: "{{ storage_web_port }}",
+        tahoe_tub_port: "{{ storage_tub_port }}",
+        tahoe_shares_needed: 2,
+        tahoe_shares_happy: 3,
+        tahoe_shares_total: 4,
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        tahoe_source_dir: "/home/human/tahoe-lafs-src",
+        tahoe_run_dir: "/home/human/tahoe_storage"
+      }
+```
+
 Install an entire Tahoe-LAFS onion grid
 ---------------------------------------
 
