@@ -1,7 +1,7 @@
 ---
 - hosts: onion-storage
   vars:
-    oniongrid_introducer_furl: "pb://ifwpslh5f4jx2s3tzkkj4cyymrcxcunz@bvkb2rnvjbep4sjz.onion:58086/introducer"
+    oniongrid_introducer_furl: "pb://iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii@bbbbbbbbbbbbbbbb.onion:37483/swisssssss"
     oniongrid_hidden_service_name: "tahoe-storage"
     oniongrid_tub_port: "43000"
     oniongrid_web_port: "3456"
