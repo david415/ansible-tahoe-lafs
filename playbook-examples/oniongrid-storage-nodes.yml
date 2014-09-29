@@ -1,16 +1,24 @@
 ---
 - hosts: onion-storage
+  connection: ssh
   vars:
-    oniongrid_introducer_furl: "pb://iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii@bbbbbbbbbbbbbbbb.onion:37483/swisssssss"
+    oniongrid_introducer_furl: "pb://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@kkkkkkkkkkkkkkkk.onion:9966/introducer"
     oniongrid_hidden_service_name: "tahoe-storage"
-    oniongrid_tub_port: "43000"
+    oniongrid_tub_port: "34000"
     oniongrid_web_port: "3456"
     oniongrid_hidden_services_parent_dir: "/var/lib/tor/services"
     oniongrid_hidden_services: [
+      { dir: "lafs-rpg", ports: [{ virtport: "80", target: "127.0.0.1:7766" }] },
       { dir: "tahoe-web", ports: [{ virtport: "{{ oniongrid_web_port }}", target: "127.0.0.1:{{ oniongrid_web_port }}" }] },
       { dir: "tahoe-storage", ports: [{ virtport: "{{ oniongrid_tub_port }}", target: "127.0.0.1:{{ oniongrid_tub_port }}" }] },
     ]
   roles:
+    - { role: ansible-openssh-hardened,
+        backports_url: "http://ftp.de.debian.org/debian/",
+        backports_distribution_release: "wheezy-backports",
+        ssh_admin_ed25519pubkey_path: "/home/amnesia/.ssh/id_ed25519.pub",
+        sudo: yes
+      }
     - { role: ansible-tor,
         tor_wait_for_hidden_services: yes,
         tor_distribution_release: "wheezy",
@@ -31,8 +39,6 @@
         tahoe_shares_total: 4,
         backports_url: "http://ftp.de.debian.org/debian/",
         backports_distribution_release: "wheezy-backports",
-        tahoe_source_dir: /home/amnesia/ansible-tahoe-base/tahoe-lafs-src,
-        tahoe_run_dir: /home/amnesia/ansible-tahoe-base/tahoe_client
+        tahoe_source_dir: /home/human/tahoe-lafs-src,
+        tahoe_run_dir: /home/human/tahoe_client
       }
-
-
