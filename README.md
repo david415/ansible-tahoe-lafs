@@ -127,12 +127,13 @@ Example tahoe-lafs over tor ("oniongrid") storage node
       { dir: "tahoe-storage", ports: [{ virtport: "{{ oniongrid_tub_port }}", target: "127.0.0.1:{{ oniongrid_tub_port }}" }] },
     ]
   roles:
-    - { role: ansible-openssh-hardened,
-        backports_url: "http://ftp.de.debian.org/debian/",
-        backports_distribution_release: "wheezy-backports",
-        ssh_admin_ed25519pubkey_path: "/home/amnesia/.ssh/id_ed25519.pub",
-        sudo: yes
-      }
+# XXX configure openssh customized configuration?
+#    - { role: ansible-openssh-hardened,
+#        backports_url: "http://ftp.de.debian.org/debian/",
+#        backports_distribution_release: "wheezy-backports",
+#        ssh_admin_ed25519pubkey_path: "/home/amnesia/.ssh/id_ed25519.pub",
+#        sudo: yes
+#      }
     - { role: ansible-tor,
         tor_wait_for_hidden_services: yes,
         tor_distribution_release: "wheezy",
